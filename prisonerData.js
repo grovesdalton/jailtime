@@ -2,7 +2,7 @@ var prisonerData = [
   {
     "_id": 83313,
     "age": 28,
-    "eyeColor": "green",
+    "eyeColor": "brown",
     "crime": "slow_speed_boating",
     "name": {
       "first": "Frazier",
