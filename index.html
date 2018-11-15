@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Jail Time Randomizer</title>
+  <script type="text/javascript" src="prisonerData.js"></script>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.5.17/dist/vue.js"></script>
+</head>
+<body class="">
+  <div class="container-fluid">
+    <div class="row text-light bg-primary heading text-center">
+      <div class="col py-5">
+        <h1>Jail Time Randomizer</h1>
+      </div>
+    </div>
+    <div class="row prisoner-display">
+      <div class="col">
+        <div id="app">
+          <table class="table table-striped">
+            <thead class="thead-dark">
+              <th scope="col">Last Name</th>
+              <th scope="col">First Name</th>
+              <th scope="col">Address</th>
+              <th scope="col">Eye Color</th>
+              <th scope="col">Crime</th>
+              <th scope="col">Release Date</th>
+              <th scope="col">Death Penalty</th>
+              <th scope="col">Death Penalty Date</th>
+            </thead>
+            <tbody>
+              <tr v-for="prisoner of prisoners" :class="prisoner.deathPenalty ? 'bg-danger text-light' : ''">
+                <td>{{prisoner.name.last}}</td>
+                <td>{{prisoner.name.first}}</td>
+                <td>{{prisoner.address}}</td>
+                <td>{{capitalizeEachWord(prisoner.eyeColor)}}</td>
+                <td>{{capitalizeEachWord(replaceAll(prisoner.crime, '_', ' '))}}</td>
+                <td>{{prisoner.deathPenalty ? 'N/A' : prisoner.releaseDate}}</td>
+                <td>{{prisoner.deathPenalty ? 'Yes' : 'No'}}</td>
+                <td>{{prisoner.deathPenalty ? prisoner.deathDate : 'N/A'}}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+<script>
+  var app = new Vue({
+    el: '#app',
+    data: {
+      prisoners: prisonerData
+    },
+    methods: {
+      capitalizeEachWord: function(str) {
+        return str.replace(/\w\S*/g, function(txt) {
+          return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+        });
+      },
+      replaceAll: function (str, find, replace) {
+        return str.replace(new RegExp(find, 'g'), replace);
+      }
+    }
+  });
+
+  app.prisoners.sort(function(a, b) {
+    var lastA = a.name.last.toUpperCase();
+    var lastB = b.name.last.toUpperCase();
+    return (lastA < lastB) ? -1 : (lastA > lastB) ? 1 : 0;
+  });
+
+  var prisonerCrimes = [];
+  var deathPenalties = [];
+  var deathDates = [];
+  generateDates();
+
+  app.prisoners.forEach(prisoner => {
+    prisonerCrimes.push(prisoner.crime);
+    deathPenalties.push(prisoner.deathPenalty);
+    deathDates.push(prisoner.deathDate);
+  });
+  console.log(prisonerCrimes);
+  console.log(deathPenalties);
+  console.log(deathDates);
+
+
+  function generateDates(){
+    app.prisoners.forEach(prisoner => {
+      prisoner.releaseDate = generateReleaseDate(prisoner);
+      prisoner.deathDate = generateDeathDate(prisoner);
+      // console.log(prisoner.releaseDate);
+    });
+  }
+
+  function generateReleaseDate(prisoner) {
+    let days = Math.floor(Math.random() * (14610 - 0) + 0);
+    let now = moment().format('dddd, MMMM D, YYYY, h:mm A');
+    let releaseDate = moment(now).add(days,'days').calendar();
+
+    return releaseDate;
+  }
+
+
+
+  function generateDeathDate(prisoner) {
+    let days = Math.floor(Math.random() * (5478 - 0) + 0);
+    let now = moment().format('dddd, MMMM D, YYYY, h:mm A');
+    let deathDate = moment(now).add(days,'days').calendar();
+
+    return deathDate;
+  }
+
+  function refreshPrisoners() {
+    // console.log(prisonerCrimes);
+    randomize(prisonerCrimes, deathPenalties);
+    generateDates();
+    // console.log(prisonerCrimes);
+    app.prisoners.forEach((prisoner, index) => {
+      prisoner.releaseDate = generateReleaseDate(prisoner);
+      prisoner.crime = prisonerCrimes[index];
+      prisoner.deathPenalty = deathPenalties[index];
+      if(prisoner.deathPenalty) {
+        prisoner.deathDate = generateDeathDate(prisoner);
+      }
+      // console.log(index);
+    });
+  }
+
+  function randomize(crimes, penalties) {
+    var currentIndex = crimes.length, temporaryValue, randomIndex;
+
+    // While there remain elements to shuffle...
+    while (0 !== currentIndex) {
+
+      // Pick a remaining element...
+      randomIndex = Math.floor(Math.random() * currentIndex);
+      currentIndex -= 1;
+
+      // And swap it with the current element.
+      temporaryValue1 = crimes[currentIndex];
+      temporaryValue2 = penalties[currentIndex];
+      crimes[currentIndex] = crimes[randomIndex];
+      crimes[randomIndex] = temporaryValue1;
+      penalties[currentIndex] = penalties[randomIndex];
+      penalties[randomIndex] = temporaryValue2;
+    }
+    prisonerCrimes = crimes;
+    deathPenalties = penalties;
+  }
+
+  setInterval(refreshPrisoners, 10000);
+</script>
+<style>
+  tr {
+    transition: all 0.2s ease-in;
+  }
+</style>
+</body>
+</html>
